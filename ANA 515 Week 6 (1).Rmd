@@ -1,0 +1,97 @@
+---
+title: "ANA 515 Week 6"
+author: "quazi nashra ahmad"
+date: "2024-06-30"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, echo=FALSE, include=FALSE}
+
+#Installing and loading the necessary packages
+#----------------------------------------------------------------------
+
+library(tidyverse)
+library(ggplot2)
+
+```
+
+```{r, echo=FALSE}
+
+#1. Reading the data from local path
+getwd()  # Check current working directory
+setwd("C:/Users/quazi/Downloads/StormEvents_details-ftp_v1.0_d1994_c20220425 (1).csv")  # Set new working directory
+storm_year_94 <- read.csv("stormevent1994.csv")
+```
+
+```{r, echo=FALSE}
+
+#2. Limiting dataset to required columns( WORKING WITH REQUIRED COLUMN)
+
+storm_94 <- storm_year_94[c(1, 7, 9, 10, 13:16)]
+```
+
+
+```{r, echo=FALSE}
+#3. Arranging subset data by STATE name
+
+storm_94 <- arrange(storm_94, STATE)
+```
+
+```{r, echo=FALSE}
+#4. Changing State and County names to title case
+
+storm_94$STATE <- str_to_title(storm_94$STATE)
+storm_94$CZ_NAME <- str_to_title(storm_94$CZ_NAME)
+```
+
+```{r, echo=FALSE}
+#5. Limiting the data to CZ_TYPE = C, then removing the column
+
+storm_94 <- storm_94 %>% 
+  filter(CZ_TYPE == "C") %>% 
+  select(-CZ_TYPE)
+```
+
+```{r, echo=FALSE}
+#6. Padding State and County FIPS with 0, then combining them in a new column "FIPS"
+
+storm_94$STATE_FIPS <- str_pad(storm_94$STATE_FIPS, width = 3, side = "left", pad = "0")
+storm_94$CZ_FIPS <- str_pad(storm_94$CZ_FIPS, width = 4, side = "left", pad = "0")
+
+storm_94 <- storm_94 %>%
+  unite("FIPS", STATE_FIPS, CZ_FIPS, sep = "-")
+```
+
+```{r, echo=FALSE}
+#7. Changing all column names to lower case
+
+storm_94 <- rename_all(storm_94, tolower)
+```
+
+```{r, echo=FALSE}
+#8. Getting state data from base R
+
+us_state_info <- data.frame(state=state.name, area=state.area, region=state.region)
+```
+
+```{r, echo=FALSE}
+#9. Merging information - number of events per state
+
+freq_state <- data.frame(table(storm_94$state))
+freq_state <- rename(freq_state, "state" = "Var1")
+merged_data <- merge(x=freq_state, y=us_state_info, by.x = "state", by.y = "state")
+```
+
+```{r, echo=FALSE}
+#10. Plot
+
+storm_plot <- ggplot(merged_data, aes(x = area, y = Freq))+
+  geom_point(aes(color = region))+
+  labs(x = "LAND AREA IN SQ. MILES",
+       y = "STORM EVENTS IN 1994")
+storm_plot
+
+```
+
